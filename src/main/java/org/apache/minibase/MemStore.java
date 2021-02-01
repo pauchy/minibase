@@ -47,17 +47,21 @@ public class MemStore implements Closeable {
   public void add(KeyValue kv) throws IOException {
     // 当发现MemStore已满，则会抛出IOException，让用户等待直到snapshot flush完毕
     flushIfNeeded(true);
+    // 写入操作和flush操作要互斥，因此在写入时先拿到updateLock的读锁
     updateLock.readLock().lock();
     try {
       KeyValue prevKeyValue;
+      // 如果kvMap中之前不存在kv，则直接加上kv.getSerializeSize()
       if ((prevKeyValue = kvMap.put(kv, kv)) == null) {
         dataSize.addAndGet(kv.getSerializeSize());
       } else {
+        // 之前kvMap存在kv，则累加差值
         dataSize.addAndGet(kv.getSerializeSize() - prevKeyValue.getSerializeSize());
       }
     } finally {
       updateLock.readLock().unlock();
     }
+    // 提交flush任务：pool.submit(new FlusherTask());
     flushIfNeeded(false);
   }
 
@@ -89,6 +93,7 @@ public class MemStore implements Closeable {
     @Override
     public void run() {
       // Step.1 memstore snpashot
+      // 写操作和flush操作互斥，因此在flush时需先拿到updateLock的写锁
       updateLock.writeLock().lock();
       try {
         snapshot = kvMap;
@@ -129,7 +134,7 @@ public class MemStore implements Closeable {
   }
 
   public static class IteratorWrapper implements SeekIter<KeyValue> {
-
+    // 迭代器的有序性是由SortedMap支持的
     private SortedMap<KeyValue, KeyValue> sortedMap;
     private Iterator<KeyValue> it;
 

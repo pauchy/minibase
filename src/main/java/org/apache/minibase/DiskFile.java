@@ -154,6 +154,11 @@ public class DiskFile implements Closeable {
     }
   }
 
+  // IndexBlock模块，每个datablock对应一个BlockMeta
+  // 维护了：datablock对应的最后一个KV: lastKV
+  // 该datablock在DiskFile中的偏移位置：offset
+  // 该datablock占用的字节长度
+  // 该datablock所有kv计算出的布隆过滤器字节数组
   public static class BlockIndexWriter {
 
     private List<BlockMeta> blockMetas = new ArrayList<>();
@@ -164,7 +169,7 @@ public class DiskFile implements Closeable {
       blockMetas.add(meta);
       totalBytes += meta.getSerializeSize();
     }
-
+    // 将IndexBlock中各个datablock对应的meta信息转化为字节数组
     public byte[] serialize() throws IOException {
       byte[] buffer = new byte[totalBytes];
       int pos = 0;
