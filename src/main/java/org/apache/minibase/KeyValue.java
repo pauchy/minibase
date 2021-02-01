@@ -85,6 +85,7 @@ public class KeyValue implements Comparable<KeyValue> {
     return key.length + OP_SIZE + SEQ_ID_SIZE;
   }
 
+  // 数据字节数组表示：rawKey + value + key + op +
   public byte[] toBytes() throws IOException {
     int rawKeyLen = getRawKeyLen();
     int pos = 0;
@@ -121,7 +122,7 @@ public class KeyValue implements Comparable<KeyValue> {
   @Override
   public int compareTo(KeyValue kv) {
     if (kv == null) {
-      throw new IllegalArgumentException("kv to compare should be null");
+      throw new IllegalArgumentException("kv to compare should not be null");
     }
     int ret = Bytes.compare(this.key, kv.key);
     if (ret != 0) {

@@ -45,6 +45,7 @@ public class MemStore implements Closeable {
   }
 
   public void add(KeyValue kv) throws IOException {
+    // 当发现MemStore已满，则会抛出IOException，让用户等待直到snapshot flush完毕
     flushIfNeeded(true);
     updateLock.readLock().lock();
     try {
